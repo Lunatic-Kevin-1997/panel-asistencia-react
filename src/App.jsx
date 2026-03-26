@@ -1,39 +1,47 @@
 import { useState, useEffect } from "react";
-
+import Swal from 'sweetalert2';
 function App(){
 
-  const estadoInicial = [
-    {id: 1, nombre: 'Ana García', puesto: 'Desarrolladora Frontend', estado: 'pendiente'},
-    {id: 2, nombre: 'Carlos López', puesto: 'Diseñador UX/UI', estado: 'pendiente'},
-    {id: 3, nombre: 'María Rodríguez', puesto: 'Project Manager', estado: 'pendiente'},
-    {id: 4, nombre: 'Jorge Pérez', puesto: 'Desarrollador Backend', estado: 'pendiente'}
-  ];
-
-  const [empleados, setEmpleados] = useState(() => {
-    const datosGuardados = localStorage.getItem('empleadosGuardados')
-
-    if(datosGuardados){
-      return JSON.parse(datosGuardados);
-    }
-
-    return estadoInicial;
-  });
-
+  const API_URL = 'https://api-asistencia-backend.onrender.com/api'
+  const [empleados, setEmpleados] = useState([]);
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevoPuesto, setNuevoPuesto] = useState('');
+  const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
-    localStorage.setItem('empleadosGuardados', JSON.stringify(empleados));
-  }, [empleados]);
+    fetch(`${API_URL}/empleados`)
+      .then(respuesta => respuesta.json())
+      .then(datos => {
+        console.log("Datos recibidos del backend:", datos);
+        setEmpleados(datos);
+      })
+      .catch(error => console.error("Hubo un error en la conexion.", error));
+  }, []);
   
   const marcarAsistencia = (id, nuevoEstado) => {
-    const empleadosActualizados = empleados.map((empleado) => {
-      if(empleado.id === id){
-        return {...empleado, estado: nuevoEstado};
-      }
-      return empleado;
+    fetch(`${API_URL}/empleados/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({estado: nuevoEstado})
+    })
+    .then(respuesta => respuesta.json())
+    .then(empleadoActualizado => {
+      console.log("Cambio guardado en MySQL", empleadoActualizado);
+
+      const empleadosActualizados = empleados.map((empleado) => {
+        if(empleado.id === id){
+          return {...empleado, estado: nuevoEstado};
+        }
+        return empleado;
+      })
+      setEmpleados(empleadosActualizados);
+    })
+    .catch(error => {
+      console.error("Hubo un error actualizando el estado:", error);
     });
-    setEmpleados(empleadosActualizados);
   }
 
   const obtenerColorBadge = (estado) => {
@@ -46,22 +54,91 @@ function App(){
   const agregarEmpleado = (e) => {
     e.preventDefault();
 
-    if(nuevoNombre.trim() === '' || nuevoPuesto.trim() === '') return;
+    if(nuevoNombre.trim() === '' || nuevoPuesto.trim() === ''){
+      Swal.fire('Cuidado!', 'Por favor llena todos los campos antes de guardar','warning');
+      return;
+    }
 
-    const nuevoEmpleado = {
-      id: empleados.length > 0 ? Math.max(...empleados.map(emp => emp.id)) + 1 : 1,
+    if(nuevoNombre.trim().length<3){
+      Swal.fire('Nombre muy corto', 'El nombre del empleado debe tener al menos 3 letras','warning')
+      return;
+    }
+    
+    if(nuevoPuesto.trim().length<1){
+      Swal.fire('Puesto muy corto', 'El puesto de trabajo no es válido.','warning');
+      return;
+    }
+
+    const datosParaLaravel = {
       nombre: nuevoNombre,
-      puesto: nuevoPuesto,
+      departamento: nuevoPuesto,
       estado: 'Pendiente'
     };
-    setEmpleados([...empleados, nuevoEmpleado]);
-    setNuevoNombre('');
-    setNuevoPuesto('');
+    fetch(`${API_URL}/empleados`,{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'aplication/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(datosParaLaravel)
+    })
+    .then(async (respuesta) => {
+      if(!respuesta.ok){
+        const errorData = await respuesta.json();
+        throw new Error(errorData.message || "Datos inválidos rechazados");
+      }
+      return respuesta.json();
+    })
+    .then(empleadoGuardado => {
+      console.log("Guardado exitoso en MYSQL", empleadoGuardado);
+
+      setEmpleados([...empleados, empleadoGuardado]);
+      setNuevoNombre('');
+      setNuevoPuesto('');
+
+      Swal.fire('Éxito!', 'Empleado registrado correctamente', 'success');
+    })
+    .catch(error => {
+      console.error("Hubo un problema guardando al empleado:", error.message);
+      Swal.fire('Error de Validación', 'El nombre debe tener al menos 3 letras  ser válido', 'error');
+    });
   }
 
   const eliminarEmpleado = (id) => {
-    const listaActualizada = empleados.filter((empleado) => empleado.id !== id);
-    setEmpleados(listaActualizada);
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: "¡Esta acción no se puede deshacer!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Sí, despedir',
+      cancelButtonText: 'Cancelar'
+    }).then((result)=> {
+      if(result.isConfirmed){
+        fetch(`${API_URL}/empleados/${id}`,{
+          method: 'DELETE',
+          headers: {
+            'Accept': 'application/json'
+          }
+        })
+        .then(respuesta => respuesta.json())
+        .then(datos => {
+          const listaActualizada = empleados.filter((empleado) => empleado.id !== id);
+          setEmpleados(listaActualizada);
+
+          Swal.fire(
+            'Eliminado!',
+            'El empleado ha sido borrado de la base de datos.',
+            'success'
+          );
+        })
+        .catch(error => {
+          console.error("Hubo un error al eliminiar: ", error);
+          Swal.fire('Error', 'No se pudo conectar con el servidor', 'error')
+        })
+      }
+    })
   }
 
   const totalEmpleados = empleados.length;
@@ -69,6 +146,14 @@ function App(){
   const totalTardes = empleados.filter(emp => emp.estado === 'Tarde').length;
   const totalFaltas = empleados.filter(emp => emp.estado === 'Falta').length;
   
+  const empleadosFiltrados = empleados.filter((empleado) => {
+    const nombre = empleado.nombre ? empleado.nombre.toLowerCase() : '';
+    const departamento = empleado.departamento ? empleado.departamento.toLowerCase() : '';
+    const textoBusqueda = busqueda.toLowerCase();
+
+    return nombre.includes(textoBusqueda) || departamento.includes(textoBusqueda);
+  })
+
   return(
     <div className="container mt-5">
       <h1 className="text-center text-primary mb-4">Panel de Asistencia</h1>
@@ -141,6 +226,15 @@ function App(){
           </form>
         </div>
       </div>
+      <div className="mb-3">
+        <input 
+          type="text"
+          className="form-control border-primary shadow-sm"
+          placeholder="Buscar empleado por nombre o departamento"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
+      </div>
       <div className="table-responsive shadow rounded">
         <table className="table table-striped table-hover align-middle mb-0">
           <thead className="table-dark">
@@ -153,11 +247,11 @@ function App(){
             </tr>
           </thead>
           <tbody>
-            {empleados.map((empleado, index) => (
+            {empleadosFiltrados.map((empleado, index) => (
               <tr key={empleado.id}>
                 <td className="fw-bold text-secondary">{index + 1}</td>
                 <td className="fw-bold">{empleado.nombre}</td>
-                <td>{empleado.puesto}</td>
+                <td>{empleado.departamento}</td>
                 <td>
                   <span className={`badge ${obtenerColorBadge(empleado.estado)} fs-6`}>
                     {empleado.estado}
@@ -186,7 +280,7 @@ function App(){
                 </td>
               </tr>
             ))}
-            {empleados.length === 0 && (
+            {empleadosFiltrados.length === 0 && (
               <tr>
                 <td colSpan="5" className="text-center py-4 text-muted">
                   No hay empleados registrados. ¡Agrega uno nuevo!
