@@ -1,16 +1,38 @@
-# React + Vite
+# 🏢 Panel de Asistencia - B2B Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
+![Bootstrap](https://img.shields.io/badge/bootstrap-%238511FA.svg?style=for-the-badge&logo=bootstrap&logoColor=white)
 
-Currently, two official plugins are available:
+Un panel de control (Dashboard) responsivo desarrollado en **React** para la gestión de asistencia de empleados. Diseñado con un enfoque en la experiencia de usuario (UX) para entornos corporativos (B2B).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+🔗 **[Mira la aplicación en vivo aquí](https://panel-asistencia-react.vercel.app/)**
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Características Principales
 
-## Expanding the ESLint configuration
+- **CRUD Completo:** Permite Registrar (Create), Visualizar (Read), Actualizar estado (Update) y Eliminar (Delete) empleados del sistema.
+- **Dashboard Dinámico:** Tarjetas de resumen en la parte superior que calculan en tiempo real el total de empleados, presentes, tardanzas y faltas.
+- **Persistencia de Datos:** Integración con `localStorage`. Los datos no se pierden al recargar la página o cerrar el navegador, simulando el comportamiento de una base de datos real.
+- **Diseño Responsivo:** Interfaz adaptable a dispositivos móviles, tablets y escritorio utilizando el sistema de cuadrículas de **Bootstrap**.
+- **Gestión Inteligente de IDs:** El sistema maneja de forma segura los identificadores únicos por debajo, mientras muestra una numeración secuencial limpia (N°) al usuario final.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 🛠️ Tecnologías Utilizadas
+
+- **Frontend:** React 18 (Hooks: `useState`, `useEffect`)
+- **Herramienta de Construcción:** Vite (para un entorno de desarrollo ultrarrápido)
+- **Estilos y UI:** Bootstrap 5
+- **Despliegue:** Vercel
+
+---
+
+## 🚀 Instalación y Uso Local
+
+Si deseas clonar este proyecto y correrlo en tu máquina local, sigue estos pasos:
+
+1. Clona el repositorio:
+   ```bash
+   git clone [https://github.com/Lunatic-Kevin-1997/panel-asistencia-react.git]
